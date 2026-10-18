@@ -66,6 +66,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    user: '1001:1001'
     ports:
       - "3001:3001"
     env_file: .env
@@ -97,6 +98,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    user: '1001:1001'
     ports:
       - "3000:3000"
     env_file: .env

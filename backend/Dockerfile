@@ -14,12 +14,14 @@ RUN npm prune --omit=dev && npm cache clean --force
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-RUN (getent group node || addgroup -S -g 1000 node) && (getent passwd node || adduser -S -u 1000 -G node node)
-COPY --from=builder --chown=node:node /app/package*.json ./
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/dist ./dist
-RUN chown -R node:node /app
-USER node
+# Create a dedicated non-root app user (uid/gid 1001) per CIS Docker Benchmark
+RUN addgroup --system --gid 1001 app && adduser --system --uid 1001 --ingroup app app
+COPY --from=builder --chown=app:app /app/package*.json ./
+COPY --from=builder --chown=app:app /app/node_modules ./node_modules
+COPY --from=builder --chown=app:app /app/dist ./dist
+# Ensure uploads and SQLite data directories are writable by the app user
+RUN mkdir -p /app/uploads /app/data && chown -R app:app /app /app/uploads /app/data
+USER app
 EXPOSE 3001
 CMD ["node", "dist/index.js"]
 
